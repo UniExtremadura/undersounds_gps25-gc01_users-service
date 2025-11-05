@@ -1,6 +1,6 @@
 
 // COMENTADA COMPLETA - CLASE SecurityConfig1
-/*
+ 
 
 package es.unex.gc01.usersservice.security;
 
@@ -70,7 +70,7 @@ public class SecurityConfig {
     JwtToAuthenticatedUserConverter jwtToAuthenticatedUserConverter() {
         return new JwtToAuthenticatedUserConverter();
     }
-}*/
+} 
 /*
 package es.unex.gc01.usersservice.security;
 
@@ -100,6 +100,11 @@ public class SecurityConfig {
                 );
 
         return http.build();
+    }
+
+    @Bean
+    JwtToAuthenticatedUserConverter jwtToAuthenticatedUserConverter() {
+        return new JwtToAuthenticatedUserConverter();
     }
 }
 */
