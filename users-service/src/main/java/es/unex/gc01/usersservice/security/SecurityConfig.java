@@ -1,4 +1,7 @@
 
+// COMENTADA COMPLETA - CLASE SecurityConfig1
+ 
+
 package es.unex.gc01.usersservice.security;
 
 import lombok.RequiredArgsConstructor;
@@ -67,4 +70,5 @@ public class SecurityConfig {
     JwtToAuthenticatedUserConverter jwtToAuthenticatedUserConverter() {
         return new JwtToAuthenticatedUserConverter();
     }
-}
+} 
+ 
