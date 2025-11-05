@@ -1,0 +1,43 @@
+<h2>Crear Cuenta</h2>
+<form id="registerForm">
+    <input type="text" name="name" placeholder="Nombre" required />
+    <input type="text" name="surname" placeholder="Apellido" required />
+    <input type="text" name="username" placeholder="Usuario" required />
+    <input type="email" name="email" placeholder="Email" required />
+    <input type="password" name="password" placeholder="Contraseña" required />
+    <input type="role" name="role" placeholder="role" required />
+    <!-- Campo de selección de rol -->
+
+    <button type="submit">Crear cuenta</button>
+</form>
+<div id="respuesta"></div>
+
+<script>
+    document.getElementById('registerForm').onsubmit = async function(e) {
+        e.preventDefault();
+
+        // Obtener los valores del formulario
+        const data = {
+            name: this.name.value,
+            surname: this.surname.value,
+            username: this.username.value,
+            email: this.email.value,
+            password: this.password.value,
+            role: this.role.value
+        };
+
+        console.log('Datos enviados:', data);  // Verificar en la consola los datos que se están enviando
+
+        // Realizar la solicitud POST
+        const res = await fetch('http://localhost:8080/users/registro', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        // Procesar la respuesta
+        const resultado = await res.json();
+        document.getElementById('respuesta').innerText = JSON.stringify(resultado, null, 2);
+    };
+</script>
+
