@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Gestionar Usuarios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"> <!-- FontAwesome para iconos -->
+    <style>
+        .badge-admin {
+            background-color: #28a745; /* Verde para ADMIN */
+            color: white;
+        }
+        .badge-user {
+            background-color: #007bff; /* Azul para USER */
+            color: white;
+        }
+        .badge-artist {
+            background-color: #6f42c1; /* Púrpura para ARTIST */
+            color: white;
+        }
+        .btn-danger {
+            background-color: #dc3545;  /* Rojo para eliminar */
+            border-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+        .action-buttons button {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h2 class="text-center">Administrar Usuarios</h2>
+
+    <!-- Indicador de carga -->
+    <div id="loading-indicator" class="text-center" style="display:none;">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+
+    <!-- Tabla de usuarios -->
+    <table class="table table-bordered mt-3" id="users-table" style="display:none;">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Username</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+        <tbody id="users-table-body">
+        <!-- Aquí se llenarán las filas de los usuarios -->
+        </tbody>
+    </table>
+
+    <!-- Botón de actualizar -->
+    <button id="refresh-btn" class="btn btn-primary">Actualizar</button>
+</div>
+
+<!-- Script de JQuery y Bootstrap -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Función que se ejecuta cuando el documento está listo
+    $(document).ready(function() {
+        let currentUsers = [];
+
+        // Cargar usuarios al iniciar
+        loadUsers();
+
+        // Configurar el botón de actualizar
+        $('#refresh-btn').click(function() {
+            loadUsers();
+        });
+
+        // Función para cargar los usuarios
+        function loadUsers() {
+            // Mostrar indicador de carga
+            $('#loading-indicator').show();
+            $('#users-table').hide();
+
+            // Realizar la petición GET para obtener todos los usuarios
+            $.ajax({
+                url: '/users/all',  // URL del endpoint de usuarios
+                method: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    currentUsers = data;
+                    populateUsersTable(data);
+
+                    // Ocultar indicador de carga y mostrar la tabla
+                    $('#loading-indicator').hide();
+                    $('#users-table').show();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error al cargar los usuarios: ", error);
+                    $('#loading-indicator').hide();
+                    alert('Error al cargar los usuarios: ' + error);
+                }
+            });
+        }
+
+        // Función para poblar la tabla de usuarios
+        function populateUsersTable(users) {
+            $('#users-table-body').empty();
+
+            users.forEach(function(user, index) {
+                let row = $('<tr>');
+
+                // Número de fila
+                row.append($('<td>').text(index + 1));
+
+                // Nombre de usuario
+                row.append($('<td>').text(user.username || 'No especificado'));
+
+                // Nombre
+                let nameCell = $('<td>');
+                nameCell.text(user.name || 'Sin nombre');
+                row.append(nameCell);
+
+                // Apellido
+                let surnameCell = $('<td>');
+                surnameCell.text(user.surname || 'Sin apellido');
+                row.append(surnameCell);
+
+                // Email
+                row.append($('<td>').text(user.email));
+
+                // Rol con badge
+                let roleBadge = $('<span>').addClass('badge');
+                if (user.role === 'ADMIN') {
+                    roleBadge.addClass('badge-admin').text('ADMIN');
+                } else if (user.role === 'ARTIST') {
+                    roleBadge.addClass('badge-artist').text('ARTIST');
+                } else {
+                    roleBadge.addClass('badge-user').text('USER');
+                }
+                row.append($('<td>').append(roleBadge));
+
+                // Botones de acción
+                let actionButtons = $('<div>').addClass('action-buttons d-flex flex-wrap');
+
+                // Botón Cambiar Rol
+                actionButtons.append(
+                    $('<button>')
+                        .addClass('btn btn-info btn-sm me-2 mb-1')
+                        .html('<i class="fas fa-user-cog me-1"></i>Cambiar Rol')
+                        .click(function() {
+                            changeUserRole(user);  // Este es un ejemplo de cómo podrías manejar el cambio de rol
+                        })
+                );
+
+                // Botón Eliminar (con cruz)
+                actionButtons.append(
+                    $('<button>')
+                        .addClass('btn btn-danger btn-sm mb-1')
+                        .html('<i class="fas fa-times me-1"></i>')  // Icono de la cruz (fa-times)
+                        .click(function() {
+                            deleteUser(user.username);  // Elimina el usuario sin confirmación
+                        })
+                );
+
+                row.append($('<td>').append(actionButtons));
+                $('#users-table-body').append(row);
+            });
+        }
+
+        // Función para eliminar un usuario
+        function deleteUser(username) {
+            $.ajax({
+                url: '/users',  // Endpoint de eliminación
+                method: 'DELETE',
+                headers: {
+                    'username': username  // Enviamos el username como un header
+                },
+                success: function(response) {
+                    alert('Usuario ' + username + ' eliminado correctamente');
+                    loadUsers();  // Recargar la lista de usuarios
+                },
+                error: function(xhr, status, error) {
+                    alert('Error al eliminar el usuario: ' + error);
+                }
+            });
+        }
+
+        // Función para cambiar el rol de un usuario
+        function changeUserRole(user) {
+            // Preguntar al usuario qué rol asignar (ahora incluye ARTIST)
+            let newRole = prompt("Ingrese el nuevo rol para el usuario " + user.username + " (ADMIN/USER/ARTIST):", user.role);
+
+            if (newRole && (newRole === 'ADMIN' || newRole === 'USER' || newRole === 'ARTIST')) {
+                // Realizar la actualización del rol en el backend
+                $.ajax({
+                    url: '/users',  // Endpoint de actualización de rol
+                    method: 'PATCH',
+                    headers: {
+                        'username': user.username  // Enviamos el username como un header
+                    },
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        role: newRole,  // El rol que se va a asignar
+                        email: user.email  // El email se mantiene igual
+                    }),
+                    success: function(response) {
+                        alert('Rol actualizado a: ' + newRole);
+                        loadUsers();  // Recargar la lista de usuarios después de la actualización
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Error al actualizar el rol: ' + error);
+                    }
+                });
+            } else {
+                alert('Rol inválido. Por favor ingrese ADMIN, USER o ARTIST.');
+            }
+        }
+    });
+</script>
+</body>
+</html>

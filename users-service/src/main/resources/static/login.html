@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            max-width: 400px;
+            width: 100%;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-control {
+            margin-bottom: 15px;
+            padding: 12px;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        #respuesta {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <div class="login-header">
+        <h2>Iniciar sesión</h2>
+        <p class="text-muted">Ingresa a tu cuenta</p>
+    </div>
+
+    <form id="loginForm">
+        <div class="mb-3">
+            <input type="email" name="email" class="form-control" placeholder="Email" required />
+        </div>
+        <div class="mb-3">
+            <input type="password" name="password" class="form-control" placeholder="Contraseña" required />
+        </div>
+        <button type="submit" class="btn-login">Entrar</button>
+    </form>
+
+    <div id="respuesta"></div>
+</div>
+
+<script>
+    document.getElementById('loginForm').onsubmit = async function(e) {
+        e.preventDefault();
+
+        // Mostrar indicador de carga
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Iniciando sesión...';
+        submitBtn.disabled = true;
+
+        const data = {
+            email: this.email.value,
+            password: this.password.value
+        };
+
+        try {
+            const res = await fetch('http://localhost:8080/users/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+
+            const resultado = await res.json();
+
+            // Mostrar mensaje de respuesta
+            const respuestaDiv = document.getElementById('respuesta');
+            respuestaDiv.style.display = 'block';
+
+            if (res.ok && resultado.username) {
+                // Login exitoso
+                respuestaDiv.className = 'success-message';
+                respuestaDiv.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span>Inicio de sesión exitoso. Redirigiendo...</span>
+                    </div>
+                `;
+
+                // Guardar información del usuario en localStorage
+                localStorage.setItem('currentUser', JSON.stringify(resultado));
+
+                // Redirigir a profile.html después de 1.5 segundos
+                setTimeout(() => {
+                    window.location.href = `profile.html?username=${resultado.username}`;
+                }, 1500);
+
+            } else {
+                // Error en el login
+                respuestaDiv.className = 'error-message';
+                respuestaDiv.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <span>Error: ${resultado.message || 'Credenciales incorrectas'}</span>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            // Error de conexión
+            const respuestaDiv = document.getElementById('respuesta');
+            respuestaDiv.style.display = 'block';
+            respuestaDiv.className = 'error-message';
+            respuestaDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <span>Error de conexión: ${error.message}</span>
+                </div>
+            `;
+        } finally {
+            // Restaurar el botón
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    };
+
+    // Añadir iconos de Font Awesome
+    const faScript = document.createElement('script');
+    faScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js';
+    document.head.appendChild(faScript);
+</script>
+</body>
+</html>
