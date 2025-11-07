@@ -1,5 +1,4 @@
 package es.unex.gc01.usersservice.controllers;
-
 import es.unex.gc01.usersservice.model.User;
 import es.unex.gc01.usersservice.model.enums.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +27,7 @@ public class UserController {
     }
 
     // Endpoint para microservicios por USERNAME
-    @GetMapping("/users/username/{username}")
+    @GetMapping("/users/{username}")
     public ResponseEntity<?> getUserByUsername(@PathVariable String username) {
         try {
             UserProfileDTO user = userService.getUserForMicroservice(username);
@@ -253,7 +252,7 @@ public class UserController {
                             completedUsers.add(user);
                         }
                     } catch (Exception e) {
-                          completedUsers.add(user);
+                        completedUsers.add(user);
                     }
                 } else {
                     completedUsers.add(user);
@@ -311,16 +310,6 @@ public class UserController {
             );
             return ResponseEntity.status(400).body(error);
         }
-    }
 
-
-
-
-
-
-
-
-
-
-
-}
+    }}
+//Las cuentas terminan siendo eliminadas tanto desde admin como desde perfil dándole a la cruz roja
