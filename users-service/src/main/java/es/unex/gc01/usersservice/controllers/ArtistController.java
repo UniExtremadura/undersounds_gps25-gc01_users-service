@@ -3,12 +3,9 @@ package es.unex.gc01.usersservice.controllers;
 
 import es.unex.gc01.usersservice.dto.*;
 import es.unex.gc01.usersservice.service.ArtistService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import javax.sql.DataSource;
 import java.time.Instant;
 import java.util.List;
 
@@ -95,38 +92,14 @@ public class ArtistController {
         }
     }
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;  // JdbcTemplate se inyecta automáticamente por Spring Boot
-
-
-
+    // Convertir usuario en artista
     @PostMapping
     public ResponseEntity<?> convertToArtist(@RequestBody ArtistFormDTO artistFormDTO,
                                              @RequestHeader("username") String username) {
         try {
-            // Consulta SQL para actualizar el rol del usuario a 'ARTIST'
-            String sql = "UPDATE users SET role = 'ARTIST' WHERE username = ?";
-
-            // Ejecutamos la actualización del rol
-            int rowsUpdated = jdbcTemplate.update(sql, username);
-
-            // Verificamos si el usuario fue actualizado
-            if (rowsUpdated > 0) {
-                // Si se actualizó, procesamos la lógica adicional del servicio
-                SuccessfulResponseDTO response = artistService.convertToArtist(artistFormDTO, username);
-                return ResponseEntity.ok(response);
-            } else {
-                // Si no se actualizó ningún registro, significa que el usuario no existe
-                ErrorResponse error = new ErrorResponse(
-                        "Not Found",
-                        "Usuario no encontrado o no se pudo actualizar",
-                        404,
-                        Instant.now().toString()
-                );
-                return ResponseEntity.status(404).body(error);
-            }
+            SuccessfulResponseDTO response = artistService.convertToArtist(artistFormDTO, username);
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            // Si ocurre un error durante el proceso, devolvemos una respuesta de error
             ErrorResponse error = new ErrorResponse(
                     "Conflict",
                     e.getMessage(),
@@ -136,7 +109,6 @@ public class ArtistController {
             return ResponseEntity.status(409).body(error);
         }
     }
-
 
     // Actualizar artista
     @PatchMapping
