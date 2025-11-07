@@ -312,4 +312,4 @@ public class UserController {
         }
 
     }}
-
+//Las cuentas terminan siendo eliminadas tanto desde admin como desde perfil dándole a la cruz roja
