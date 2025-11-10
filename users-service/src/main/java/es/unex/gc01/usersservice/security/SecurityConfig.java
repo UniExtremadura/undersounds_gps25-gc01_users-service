@@ -1,3 +1,7 @@
+
+// COMENTADA COMPLETA - CLASE SecurityConfig1
+ 
+
 package es.unex.gc01.usersservice.security;
 
 import lombok.RequiredArgsConstructor;
@@ -25,12 +29,10 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     private String issuerUri;
 
-
     @Bean
     public JwtDecoder jwtDecoder() {
         return JwtDecoders.fromIssuerLocation(issuerUri);
     }
-
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -55,10 +57,18 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.decoder(jwtDecoder()))
+                        .jwt(jwt -> {
+                            jwt.decoder(jwtDecoder());
+                            jwt.jwtAuthenticationConverter(jwtToAuthenticatedUserConverter());
+                        })
                 );
-
 
         return http.build();
     }
-}
+
+    @Bean
+    JwtToAuthenticatedUserConverter jwtToAuthenticatedUserConverter() {
+        return new JwtToAuthenticatedUserConverter();
+    }
+} 
+ 

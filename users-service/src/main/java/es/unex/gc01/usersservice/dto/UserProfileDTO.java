@@ -5,8 +5,6 @@ import es.unex.gc01.usersservice.model.enums.UserRole;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 public class UserProfileDTO {
     // Getters y Setters
     @Setter
@@ -28,19 +26,6 @@ public class UserProfileDTO {
     @Getter
     private String birthday;
     private UserRole rol;
-
-    @Setter
-    @Getter
-    private String bio;
-    @Setter
-    @Getter
-    private String phone;
-
-
-    @Setter
-    @Getter
-    private List<String> favoriteGenres;
-
 
     public UserRole getUserRole() {
         return rol; }

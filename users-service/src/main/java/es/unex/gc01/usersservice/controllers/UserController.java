@@ -1,6 +1,5 @@
 package es.unex.gc01.usersservice.controllers;
 import es.unex.gc01.usersservice.model.User;
-import es.unex.gc01.usersservice.model.enums.GenreType;
 import es.unex.gc01.usersservice.model.enums.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -28,30 +27,11 @@ public class UserController {
     }
 
     // Endpoint para microservicios por USERNAME
-
-
-
     @GetMapping("/users/{username}")
     public ResponseEntity<?> getUserByUsername(@PathVariable String username) {
         try {
-            // Tu código actual para obtener el usuario básico
             UserProfileDTO user = userService.getUserForMicroservice(username);
-
-            // OBTENER LOS GÉNEROS DE LA TABLA user_genres
-            String sqlGenres = "SELECT genre FROM user_genres WHERE user_id = ?";
-            List<String> genres = jdbcTemplate.queryForList(sqlGenres, String.class, user.getUsername());
-            user.setFavoriteGenres(genres);
-
-            // DEBUG: Mostrar qué datos se están enviando
-            System.out.println("=== DATOS ENVIADOS AL FRONTEND ===");
-            System.out.println("Username: " + user.getUsername());
-            System.out.println("Bio: '" + user.getBio() + "'");
-            System.out.println("Phone: '" + user.getPhone() + "'");
-            System.out.println("FavoriteGenres: " + user.getFavoriteGenres());
-            System.out.println("===================================");
-
             return ResponseEntity.ok(user);
-
         } catch (RuntimeException e) {
             ErrorResponse error = new ErrorResponse(
                     "Not Found",
@@ -62,10 +42,6 @@ public class UserController {
             return ResponseEntity.status(404).body(error);
         }
     }
-
-
-
-
 
     // Endpoint para microservicios por ID
     @GetMapping("/users/id/{public-id}")
@@ -181,16 +157,16 @@ public class UserController {
      */
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
     @PatchMapping("/users")
     public ResponseEntity<?> updateUser(@RequestBody UpdateUserDTO updateUserDTO,
                                         @RequestHeader("username") String username) {
         try {
-            // Buscar el usuario por username
+            // Buscar el usuario por username (del header)
             String sqlSelect = "SELECT id, username, name, surname, role, email, bio, phone, birthday, personal_link FROM users WHERE username = ?";
 
             List<Map<String, Object>> result = jdbcTemplate.queryForList(sqlSelect, username);
 
+            // Si no encontramos el usuario, devolvemos error
             if (result.isEmpty()) {
                 ErrorResponse error = new ErrorResponse(
                         "Not Found",
@@ -201,17 +177,10 @@ public class UserController {
                 return ResponseEntity.status(404).body(error);
             }
 
+            // Tomamos el primer resultado de la consulta
             Map<String, Object> row = result.get(0);
-            Long userId = (Long) row.get("id");
 
-            // DEBUG: Mostrar datos recibidos
-            System.out.println("=== DATOS RECIBIDOS PARA ACTUALIZAR ===");
-            System.out.println("Bio: '" + updateUserDTO.getBio() + "'");
-            System.out.println("Phone: '" + updateUserDTO.getPhone() + "'");
-            System.out.println("FavoriteGenres: " + updateUserDTO.getFavoriteGenres());
-            System.out.println("========================================");
-
-            // Actualizar campos básicos
+            // Solo actualizamos los campos que vienen en el DTO
             String role = updateUserDTO.getRole() != null ? updateUserDTO.getRole().toString() : (String) row.get("role");
             String name = updateUserDTO.getName() != null ? updateUserDTO.getName() : (String) row.get("name");
             String surname = updateUserDTO.getSurname() != null ? updateUserDTO.getSurname() : (String) row.get("surname");
@@ -221,11 +190,12 @@ public class UserController {
             String birthday = updateUserDTO.getBirthday() != null ? updateUserDTO.getBirthday() : (String) row.get("birthday");
             String personalLink = updateUserDTO.getPersonalLink() != null ? updateUserDTO.getPersonalLink() : (String) row.get("personal_link");
 
-            // Actualizar usuario en la tabla users
+            // Realizamos la actualización del usuario en la base de datos
             String sqlUpdate = "UPDATE users SET " +
                     "role = ?, name = ?, surname = ?, email = ?, bio = ?, phone = ?, birthday = ?, personal_link = ? " +
                     "WHERE id = ?";
 
+            // Ejecutamos la actualización en la base de datos
             jdbcTemplate.update(sqlUpdate,
                     role,
                     name,
@@ -235,31 +205,12 @@ public class UserController {
                     phone,
                     birthday,
                     personalLink,
-                    userId);
+                    row.get("id"));
 
-            // ACTUALIZAR GÉNEROS FAVORITOS - si vienen en el DTO
-            if (updateUserDTO.getFavoriteGenres() != null && !updateUserDTO.getFavoriteGenres().isEmpty()) {
-                // Primero eliminar géneros existentes
-                String sqlDeleteGenres = "DELETE FROM user_genres WHERE user_id = ?";
-                jdbcTemplate.update(sqlDeleteGenres, userId);
-
-                // Insertar nuevos géneros - CONVERTIR A STRING EXPLÍCITAMENTE
-                String sqlInsertGenre = "INSERT INTO user_genres (user_id, genre) VALUES (?, ?)";
-                for (Object genreObj : updateUserDTO.getFavoriteGenres()) {
-                    String genre = genreObj.toString(); // CONVERTIR A STRING
-                    jdbcTemplate.update(sqlInsertGenre, userId, genre);
-                    System.out.println("Insertando género: " + genre);
-                }
-
-                System.out.println("Géneros actualizados: " + updateUserDTO.getFavoriteGenres());
-            }
-
+            // Retornamos una respuesta de éxito con los datos actualizados
             return ResponseEntity.ok("Usuario actualizado correctamente");
 
         } catch (Exception e) {
-            System.err.println("ERROR en updateUser: " + e.getMessage());
-            e.printStackTrace();
-
             ErrorResponse error = new ErrorResponse(
                     "Internal Server Error",
                     "Error al actualizar el usuario: " + e.getMessage(),
@@ -329,7 +280,7 @@ public class UserController {
     public ResponseEntity<?> changeUserRole(@PathVariable String username,
                                             @RequestBody ChangeRoleDTO changeRoleDTO) {
         try {
-            SuccessfulResponseDTO response = userService.changeUserRole(username, String.valueOf(changeRoleDTO.getRole()));
+            SuccessfulResponseDTO response = userService.changeUserRole(username, changeRoleDTO.getRole());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             ErrorResponse error = new ErrorResponse(
@@ -361,5 +312,4 @@ public class UserController {
         }
 
     }}
-
-//funcionalidades revisadas h15
+//Las cuentas terminan siendo eliminadas tanto desde admin como desde perfil dándole a la cruz roja
