@@ -1,6 +1,6 @@
 
 // COMENTADA COMPLETA - CLASE SecurityConfig1
- 
+/*
 
 package es.unex.gc01.usersservice.security;
 
@@ -70,5 +70,36 @@ public class SecurityConfig {
     JwtToAuthenticatedUserConverter jwtToAuthenticatedUserConverter() {
         return new JwtToAuthenticatedUserConverter();
     }
-} 
- 
+}*/
+/*
+package es.unex.gc01.usersservice.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())  // Desactiva CSRF para simplificar
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/users/registro").permitAll()
+                        // Permite el registro sin autenticación
+                        .anyRequest().authenticated()  // El resto requiere autenticación
+                );
+
+        return http.build();
+    }
+}
+*/
