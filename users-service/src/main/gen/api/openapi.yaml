@@ -1,0 +1,1371 @@
+openapi: 3.0.1
+info:
+  description: API para gestionar los usuarios del sistema
+  title: User-service API
+  version: 1.0.0
+servers:
+- url: http://localhost:8080/api
+paths:
+  /artist/public/{artistUserName}:
+    get:
+      parameters:
+      - description: Nombre de usuario del artista.
+        explode: false
+        in: path
+        name: artistUserName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SentArtistDTO'
+          description: Informacion pública del artista recuperada con éxito
+        "404":
+          content:
+            application/json:
+              example:
+                error: Not Found
+                message: Artista no encontrado
+                statusCode: 404
+                timestamp: 2025-10-01T12:03:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: "Artista {artistUserName} no encontrado"
+      summary: Recupera la información pública de un artista a partir de su nombre
+        de usuario.
+      tags:
+      - Artistas
+      x-accepts:
+      - application/json
+  /artist/public:
+    get:
+      description: Recupera una página de artistas filtrados opcionalmente por nombre
+        y/o género musical. Soporta paginación mediante los parámetros `page` y `size`.
+      parameters:
+      - description: Nombre parcial del artista para filtrar.
+        example: adam
+        explode: true
+        in: query
+        name: name
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Conjunto de géneros para filtrar artistas
+        example:
+        - HIP_HOP
+        - RAP
+        explode: false
+        in: query
+        name: genres
+        required: false
+        schema:
+          items:
+            $ref: '#/components/schemas/GenreType'
+          type: array
+        style: form
+      - description: Número de páginas solicitadas (empezando en 0)
+        example: 0
+        explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+        style: form
+      - description: Tamaño de la página
+        example: 10
+        explode: true
+        in: query
+        name: size
+        required: false
+        schema:
+          default: 10
+          minimum: 1
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageSentArtistDTO'
+          description: Página de artistas coincidentes recuperadas con éxito
+        "404":
+          content:
+            application/json:
+              example:
+                error: Not Found
+                message: No hay artistas que coinciden con la selección de búsqueda
+                statusCode: 404
+                timestamp: 2025-10-01T12:02:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: No hay artistas que coinciden con la selección de búsqueda
+      summary: Recupera una página de artistas filtrados
+      tags:
+      - Artistas
+      x-accepts:
+      - application/json
+  /artist/payment-info:
+    get:
+      description: "Devuelve los balances, pagos y otra información financiera del\
+        \ artista autenticado. Requiere autenticación."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtistPayementInfoDTO'
+          description: Información financiera del artista recuperada con éxito
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+                message: No tienes permisos para obtener la información financiera
+                  del artista
+                statusCode: 401
+                timestamp: 2025-10-01T12:00:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: No tienes permisos para obtener la información financiera del
+            artista
+      security:
+      - BearerAuth: []
+      summary: Obtiene toda la información financiera de un artista autenticado.
+      tags:
+      - Artistas
+      x-accepts:
+      - application/json
+  /artist/public/trending:
+    get:
+      description: Devuelve una lista de los artistas más populares marcados como
+        "trending".
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SentArtistDTO'
+                type: array
+          description: Lista de artistas en tendencia recuperada con éxito
+        "404":
+          content:
+            application/json:
+              example:
+                error: Not Found
+                message: No existe por el momento ningún artista en tendencia
+                statusCode: 404
+                timestamp: 2025-10-01T11:59:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: No existe por el momento ningún artista en tendencia
+      summary: Recupera una lista de los artistas en tendencia
+      tags:
+      - Artistas
+      x-accepts:
+      - application/json
+  /artist/{id}/restauracion:
+    patch:
+      description: Restaura a un artista previamente eliminado de forma lógica. Requiere
+        que el usuario autenticado sea el dueño de la cuenta de artista.
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 4
+          type: number
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResponseDTO'
+          description: Artista restaurado correctamente
+        "400":
+          description: El artista no está eliminado
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+                message: No tienes permitido restaurar a un artista
+                statusCode: 401
+                timestamp: 2025-10-01T14:41:00
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: No está permitido que restaures a un artista
+      security:
+      - BearerAuth: []
+      summary: Restaura a un artista previamente eliminado de forma lógica
+      tags:
+      - Artistas
+      x-accepts:
+      - application/json
+  /artist:
+    delete:
+      description: Realiza un borrado lógico de un artista autenticado junto con toda
+        su información.El artista y sus canciones/álbumes aparecen borrados pero no
+        se han eliminado de manera física.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResponseDTO'
+          description: Artista borrado de forma existosa
+        "400":
+          content:
+            application/json:
+              example:
+                error: Bad Request
+                message: Artista ya borrado o operación inválida
+                statusCode: 400
+                timestamp: 2025-10-01T11:55:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Mala petición - Artista ya borrado o operación inválida
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+                message: No tienes permitido borrar a un artista
+                statusCode: 401
+                timestamp: 2025-10-01T14:41:00
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Sin autorizacion - No tienes permisos para borrar a un artista
+      security:
+      - BearerAuth: []
+      summary: Realiza un borrado lógico de un artista autenticado
+      tags:
+      - Artistas
+      x-accepts:
+      - application/json
+    patch:
+      description: Permite que un artista autenticado actualice su información.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateArtistDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResponseDTO'
+          description: Artista actualizado correctamente
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+                message: No tienes permitido actualizar a un artista
+                statusCode: 401
+                timestamp: 2025-10-01T14:41:00
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: No tienes permisos para actualizar a un artista
+      security:
+      - BearerAuth: []
+      summary: Actualiza los datos de un artista autenticado
+      tags:
+      - Artistas
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+    post:
+      description: Convierte un usuario autentificado en un artista con datos incluidos.
+        Si el usuario ya está registrado como artista se manejara un error de contenido.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtistFormDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResponseDTO'
+          description: El usuario ha sido existosamente convertido a artista
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+                message: No tienes permitido convertir un usuario a artista
+                statusCode: 401
+                timestamp: 2025-10-01T14:41:00
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Sin autorizacion - No tienes permisos para convertir un usuario
+            a artista
+      security:
+      - BearerAuth: []
+      summary: Convierte un usuario en artista
+      tags:
+      - Artistas
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /users/{username}:
+    get:
+      description: "Consulta para verificar si ya existe un usuario con el mismo nombre\
+        \ de usuario.  \nSe utiliza para verificar la existencia de un nombre de usuario\
+        \ duplicado durante el proceso de registro.\n\n**Nota**: Este endpoint está\
+        \ diseñado para comunicación entre microservicios  y requiere de una API key\
+        \ válida.\n"
+      parameters:
+      - description: El nombre de usuario que se desea consultar
+        explode: false
+        in: path
+        name: username
+        required: true
+        schema:
+          example: juanM12
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                name: jhon
+                surname: brown
+                username: jhon1342
+                email: jhonbrown@gmail.com
+                password: jdk1234*4
+              schema:
+                $ref: '#/components/schemas/UserProfileDTO'
+          description: Autenticación exitosa. Devuelve los datos del usuario
+        "400":
+          content:
+            application/json:
+              example:
+                error: Bad request - Parámetros faltantes
+                message: "Los parámetros 'username, API_KEY' son requeridos"
+                status: 400
+                timestamp: 2025-10-06T19:13:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Parámetros inválidos o faltantes
+        "401":
+          content:
+            application/json:
+              example:
+                invalidCredentials:
+                  error: Unauthorized
+                  message: Credenciales no válidas
+                  statusCode: 401
+                  timestamp: 2025-10-06T18:34:00Z
+                invalidApiKey:
+                  error: Unauthorized
+                  message: API key inválida
+                  statusCode: 401
+                  timestamp: 2025-10-06T19:14:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Autenticación fallida - Username inválido o API key no autorizada
+        "500":
+          content:
+            application/json:
+              example:
+                error: Internal Server Error
+                message: Error interno del servidor
+                statusCode: 500
+                timestamp: 2025-10-06T18:41:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Error interno del servidor
+      security:
+      - ApiKeyAuth: []
+      summary: Obtiene los datos del usuario con el nombre solicitado
+      tags:
+      - Usuarios
+      x-accepts:
+      - application/json
+  /users/login/acceso:
+    get:
+      description: "Consulta para el login del usuario, buscando por su email y contraseñ\
+        a.  \nSe utiliza para verificar si existe un usuario con esos datos para poder\
+        \ iniciar sesión.\n\n**Nota**: Este endpoint está diseñado para comunicació\
+        n entre microservicios y requiere de una API key válida.\n"
+      parameters:
+      - description: El email del usuario que se quire recuperar
+        explode: true
+        in: query
+        name: email
+        required: true
+        schema:
+          example: jlosada@gmail.com
+          type: string
+        style: form
+      - description: La contraseña del usuario que se quiere recuperar
+        explode: true
+        in: query
+        name: password
+        required: true
+        schema:
+          example: jyEfkri45
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                name: jhon
+                surname: brown
+                username: jhon1342
+                email: jhonbrown@gmail.com
+                password: jdk1234*4
+              schema:
+                $ref: '#/components/schemas/UserProfileDTO'
+          description: Autenticación existosa. Retorna los datos del usuario
+        "400":
+          content:
+            application/json:
+              example:
+                error: Bad request - Parámetros faltantes
+                message: "Los parámetros 'email, password y API_KEY' son requeridos"
+                status: 400
+                timestamp: 2025-10-06T18:29:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Parámetros inválidos o faltantes
+        "401":
+          content:
+            application/json:
+              example:
+                invalidCredentials:
+                  error: Unauthorized
+                  message: Credenciales no válidas
+                  statusCode: 401
+                  timestamp: 2025-10-06T18:34:00Z
+                invalidApiKey:
+                  error: Unauthorized
+                  message: API key inválida
+                  statusCode: 401
+                  timestamp: 2025-10-06T18:36:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Autenticación fallida - Credenciales inválidas o API key no
+            autorizada
+        "500":
+          content:
+            application/json:
+              example:
+                error: Internal Server Error
+                message: Error interno del servidor
+                statusCode: 500
+                timestamp: 2025-10-06T18:41:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Error interno del servidor
+      security:
+      - ApiKeyAuth: []
+      summary: Obtiene los usuarios que coincidan con el correo y contraseña
+      tags:
+      - Usuarios
+      x-accepts:
+      - application/json
+  /users/{public-id}:
+    get:
+      description: "Consulta para verificar si ya existe un usuario con el mismo ID.\n\
+        Se utiliza para verificar la existencia de un usuario cuando se busca por\
+        \ su identificador único.\n\n**Nota**: Este endpoint está diseñado para comunicació\
+        n entre microservicios  y requiere de una API key válida \n"
+      parameters:
+      - description: El id del usuario que se quiere consultar
+        explode: false
+        in: path
+        name: public-id
+        required: true
+        schema:
+          example: 34
+          type: number
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                name: jhon
+                surname: brown
+                username: jhon1342
+                email: jhonbrown@gmail.com
+                password: jdk1234*4
+              schema:
+                $ref: '#/components/schemas/UserProfileDTO'
+          description: Autenticación exitosa. Devuelve los datos del usuario
+        "400":
+          content:
+            application/json:
+              example:
+                error: Bad request - Parámetros faltantes
+                message: "Los parámetros 'id, API_KEY' son requeridos"
+                status: 400
+                timestamp: 2025-10-07T07:34:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Parámetros inválidos o faltantes
+        "401":
+          content:
+            application/json:
+              example:
+                invalidCredentials:
+                  error: Unauthorized
+                  message: Credenciales no válidas
+                  statusCode: 401
+                  timestamp: 2025-10-07T07:34:00Z
+                invalidApiKey:
+                  error: Unauthorized
+                  message: API key inválida
+                  statusCode: 401
+                  timestamp: 2025-10-07T07:34:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Autenticación fallida - Id inválido o API key no autorizada
+        "500":
+          content:
+            application/json:
+              example:
+                error: Internal Server Error
+                message: Error interno del servidor
+                statusCode: 500
+                timestamp: 2025-10-07T07:35:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Error interno del servidor
+      security:
+      - ApiKeyAuth: []
+      summary: Obtiene los datos del usuario con el id solicitado
+      tags:
+      - Usuarios
+      x-accepts:
+      - application/json
+  /users:
+    delete:
+      description: Realiza un borrado lógico de un usuario autenticado junto con toda
+        su información. El usuario y su información personal aparecen borrados pero
+        no se han eliminado de manera física.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResponseDTO'
+          description: Usuario borrado de forma existosa
+        "400":
+          content:
+            application/json:
+              example:
+                error: Bad Request
+                message: Usuario ya borrado o operación inválida
+                statusCode: 400
+                timestamp: 2025-10-01T11:55:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Mala petición - Usuario ya borrado o operación inválida
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+                message: No tienes permitido borrar a un usuario
+                statusCode: 401
+                timestamp: 2025-10-01T14:41:00
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Sin autorizacion - No tienes permisos para borrar a un usuario
+      security:
+      - BearerAuth: []
+      summary: Realiza un borrado lógico de un usuario autenticado
+      tags:
+      - Usuarios
+      x-accepts:
+      - application/json
+    get:
+      description: Recupera la información del usuario actualmente autentificado.
+        Requiere un token válido de verificación.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileDTO'
+          description: Se ha obtenido correctamente la información de los usuarios
+            autenticados
+      security:
+      - BearerAuth: []
+      summary: Obtiene la información de los usuarios autenticados
+      tags:
+      - Usuarios
+      x-accepts:
+      - application/json
+    patch:
+      description: "Permite al usuario autenticado actualizar su información personal.\
+        \  \nDevuelve un objeto con el resultado de la operación.\n"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                successful: successful_user_update
+                message: El usuario ha sido correctamente actualizado
+                statusCode: 200
+                timestamp: 2025-10-01T16:30:00Z
+              schema:
+                $ref: '#/components/schemas/SuccessfulResponseDTO'
+          description: Se ha actualizado correctamente al usuario
+        "500":
+          content:
+            application/json:
+              example:
+                error: InternalServerError
+                message: Usuario no encontrado
+                statusCode: 500
+                timestamp: 2025-10-01T16:30:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Usuario no encontrado
+      security:
+      - BearerAuth: []
+      summary: Actualiza los datos de un usuario autenticado
+      tags:
+      - Usuarios
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /users/registro:
+    post:
+      description: "Crea un nuevo usuario con los datos proporcionados.  \nDevuelve\
+        \ un objeto con la información del usuario registrado.  \nLanza un error si\
+        \ el correo electrónico o el nombre de usuario ya existen.\n"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                name: jhon
+                surname: brown
+                username: jhon1342
+                email: jhonbrown@gmail.com
+                password: jdk1234*4
+              schema:
+                $ref: '#/components/schemas/UserProfileDTO'
+          description: El usuario ha sido registrado correctamente en el sistema
+        "400":
+          content:
+            application/json:
+              example:
+                error: Bad Request
+                message: La petición está mal formada
+                statusCode: 400
+                timestamp: 2025-10-01T11:48:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Error en la petición (datos inválidos)
+        "409":
+          content:
+            application/json:
+              example:
+                error: Conflict
+                message: El usuario ya está registrado
+                statusCode: 409
+                timestamp: 2025-10-01T11:50:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: El correo electrónico o el nombre del usuario ya están registrados
+        "500":
+          content:
+            application/json:
+              example:
+                error: InternalServerError
+                message: Se ha producido un error al intentar cumplir la solicitud
+                timestamp: 2025-10-01T11:52:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Internal Server Error
+      summary: Registrar un nuevo usuario en el sistema
+      tags:
+      - Usuarios
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /users/login:
+    post:
+      description: |
+        Permite a un usuario iniciar sesión con su nombre de usuario y contraseñan.
+        Devuelve el perfil del usuario si las credenciales son correctas, o un error 404 si no lo son.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                name: jhon
+                surname: brown
+                username: jhon1342
+                email: jhonbrown@gmail.com
+              schema:
+                $ref: '#/components/schemas/UserProfileDTO'
+          description: "Login correcto, devuelve la información del usuario"
+        "401":
+          content:
+            application/json:
+              example:
+                error: unauthorized
+                message: credenciales incorrectas
+                statusCode: 401
+                timestamp: 2025-10-01T16:00:00Z
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Credenciales incorrectas
+      summary: Iniciar sesión de un usuario
+      tags:
+      - Usuarios
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+components:
+  schemas:
+    UpdateUserDTO:
+      example:
+        birthday: 2004-06-11
+        phone: +34 927304576
+        name: Joel
+        bio: "Software engeneer, trying to enjoy my free time with music."
+        personalLink: http://linkedin.com/joel-estrella02212
+        email: joelestrella@gmail.com
+      properties:
+        name:
+          description: El nombre debe tener entre 2 y 50 caracteres
+          example: Joel
+          maxLength: 50
+          minLength: 2
+          type: string
+        email:
+          description: El correo electrónico no debe estar en blanco
+          example: joelestrella@gmail.com
+          type: string
+        bio:
+          description: La biografía debe ocupar un máximo de 1000 caracteres
+          example: "Software engeneer, trying to enjoy my free time with music."
+          maxLength: 1000
+          type: string
+        personalLink:
+          description: El link personal debe de ser un link válido
+          example: http://linkedin.com/joel-estrella02212
+          pattern: "^(https?://)?([\\w.-]+)+(:\\d+)?(/([\\w/_.]*)?)?$"
+          type: string
+        birthday:
+          description: El año de nacimiento debe de ser una fecha pasada
+          example: 2004-06-11
+          format: date
+          type: string
+        phone:
+          example: +34 927304576
+          pattern: "(\\+34|0034|34)?[ -]*(6|7)[ -]*([0-9][ -]*){8}?$"
+          type: string
+      required:
+      - email
+      - name
+      type: object
+    UserLoginDTO:
+      example:
+        password: jdk1234*4
+        email: jhonbrown@gmail.com
+      properties:
+        email:
+          example: jhonbrown@gmail.com
+          type: string
+        password:
+          example: jdk1234*4
+          type: string
+      type: object
+    UserRegisterDTO:
+      example:
+        password: jdk1234*4
+        surname: brown
+        name: jhon
+        email: jhonbrown@gmail.com
+        username: jhon1342
+      properties:
+        name:
+          example: jhon
+          type: string
+        surname:
+          example: brown
+          type: string
+        username:
+          example: jhon1342
+          type: string
+        email:
+          example: jhonbrown@gmail.com
+          type: string
+        password:
+          example: jdk1234*4
+          type: string
+      type: object
+    UserProfileDTO:
+      example:
+        birthday: 12-04-2004
+        surname: Losada Lago
+        name: Juan
+        personalLink: http://www.linkedin.com/in/juan-losada-344344/
+        email: losada@gmail.com
+        username: juanM12
+      properties:
+        username:
+          example: juanM12
+          type: string
+        name:
+          example: Juan
+          type: string
+        surname:
+          example: Losada Lago
+          type: string
+        email:
+          example: losada@gmail.com
+          type: string
+        personalLink:
+          example: http://www.linkedin.com/in/juan-losada-344344/
+          type: string
+        birthday:
+          example: 12-04-2004
+          type: string
+      type: object
+    ArtistFormDTO:
+      example:
+        iban: ES7921000813610123456789
+        description: WILYWNKA es un cantante de género RAP|J_POP ....
+        artistName: WILYWNKA
+        accountPropietary: Company EPSILON
+      properties:
+        artistName:
+          description: El nombre del artista debe tener entre 2 y 100 caracteres
+          example: WILYWNKA
+          maxLength: 100
+          minLength: 2
+          type: string
+        iban:
+          description: El iban no debe estar vacío
+          example: ES7921000813610123456789
+          pattern: "^[A-Z]{2}\\d{2}[A-Z0-9]{1,30}$"
+          type: string
+        accountPropietary:
+          description: El propietario de la cuenta debe tener entre 2 y 100 caracteres
+          example: Company EPSILON
+          maxLength: 100
+          minLength: 2
+          type: string
+        description:
+          description: La descripción no debe de ser vacía
+          example: WILYWNKA es un cantante de género RAP|J_POP ....
+          maxLength: 1000
+          minLength: 10
+          type: string
+      required:
+      - accountPropietary
+      - artistName
+      - description
+      - iban
+      type: object
+    SuccessfulResponseDTO:
+      example:
+        message: El artista ha sido actualizado correctamente
+        successful: successful_artist_update
+        statusCode: 200
+        timestamp: 01/10/2025 13:13:00
+      properties:
+        successful:
+          example: successful_artist_update
+          type: string
+        message:
+          example: El artista ha sido actualizado correctamente
+          type: string
+        statusCode:
+          example: 200
+          type: integer
+        timestamp:
+          example: 01/10/2025 13:13:00
+          type: string
+      type: object
+    ErrorResponse:
+      example:
+        error: unauthorized
+        message: Debes iniciar sesión para poder acceder a este recurso
+        statusCode: 401
+        timestamp: 2025-10-01T16:30:00Z
+      properties:
+        error:
+          description: Código corto de error
+          example: unauthorized
+          type: string
+        message:
+          description: Mensaje descriptivo del error
+          example: Debes iniciar sesión para poder acceder a este recurso
+          type: string
+        statusCode:
+          description: Código HTTP asociado al error
+          example: 401
+          type: integer
+        timestamp:
+          description: Hora en la que se ha producido el error
+          example: 2025-10-01T16:30:00Z
+          format: date-time
+          type: string
+      type: object
+    UpdateArtistDTO:
+      example:
+        artisticName: Mathew PJ
+        genres:
+        - ROCK
+        - JAZZ
+        iban: ES7921000813610123456789
+        description: Músico especializado en jazz y soul.
+        socialMediaLinks:
+        - id: 1
+          type: SPOTIFY
+        - id: 2
+          type: INSTAGRAM
+      properties:
+        artisticName:
+          description: El nombre artístico no debe estar en blanco (entre 2 y 100
+            caracteres)
+          example: Mathew PJ
+          maxLength: 100
+          minLength: 2
+          type: string
+        description:
+          description: La describición no debe estar en blanco (entre 10 y 1000 caracteres)
+          example: Músico especializado en jazz y soul.
+          maxLength: 1000
+          minLength: 10
+          type: string
+        iban:
+          description: El formato del iban debe de ser válido
+          example: ES7921000813610123456789
+          pattern: "^[A-Z]{2}\\d{2}[A-Z0-9]{1,30}$"
+          type: string
+        genres:
+          description: Debes proprocionar entre 1 y 4 géneros distintos
+          example:
+          - ROCK
+          - JAZZ
+          items:
+            $ref: '#/components/schemas/GenreType'
+          maxItems: 4
+          minItems: 1
+          type: array
+        socialMediaLinks:
+          description: Debes proporcionar entre 1 y 4 enlaces a tus redes sociales.
+          example:
+          - id: 1
+            type: SPOTIFY
+          - id: 2
+            type: INSTAGRAM
+          items:
+            $ref: '#/components/schemas/SocialMediaLinks'
+          maxItems: 4
+          minItems: 1
+          type: array
+      required:
+      - accountProperty
+      - artisticName
+      - description
+      - genres
+      - iban
+      - socialMediaLinks
+      type: object
+    SentArtistDTO:
+      example:
+        artisticName: TORAUMA
+        monthlyStreams: 4
+        isTrending: true
+        genres:
+        - id: 4
+          type: "J_POP, RAP, HIP_HOP"
+        - id: 4
+          type: "J_POP, RAP, HIP_HOP"
+        verified: true
+        description: Cantante inigualable que promueve el género Hip-Hop | Rap moderno
+          en Japón
+        artistId: 100
+        socialMediaLinks:
+        - id: 1
+          type: SPOTIFY
+        - id: 1
+          type: SPOTIFY
+        username: torauma@111
+      properties:
+        artistId:
+          example: 100
+          type: number
+        username:
+          example: torauma@111
+          type: string
+        artisticName:
+          example: TORAUMA
+          type: string
+        description:
+          example: Cantante inigualable que promueve el género Hip-Hop | Rap moderno
+            en Japón
+          type: string
+        isTrending:
+          example: true
+          type: boolean
+        verified:
+          example: true
+          type: boolean
+        socialMediaLinks:
+          items:
+            $ref: '#/components/schemas/SocialMediaLinks'
+          type: array
+        monthlyStreams:
+          example: 4
+          type: number
+        genres:
+          items:
+            $ref: '#/components/schemas/Genre'
+          type: array
+      type: object
+    ArtistPayementInfoDTO:
+      example:
+        balance:
+        - balanceDate: 30-09-2025
+          monthlyBalance: 1030.0
+          artistId: 4
+          id: 30
+          status: PENDIENTE
+        - balanceDate: 30-09-2025
+          monthlyBalance: 1030.0
+          artistId: 4
+          id: 30
+          status: PENDIENTE
+        totalBalance: 1030.0
+        iban: ES9121000418450200051332
+        thisMonth: 444.4
+        accountPropietary: jason the wheen
+        username: "4"
+        status:
+        - amount: 2
+          concept: Compra de canción
+          paymentMethod:
+          - TRANSFERENCIA
+          - TRANSFERENCIA
+          artistId: 4
+          artistName: jason
+          id: 1
+          paymentDate: 12-09-2025
+          status:
+          - PENDIENTE
+          - PENDIENTE
+        - amount: 2
+          concept: Compra de canción
+          paymentMethod:
+          - TRANSFERENCIA
+          - TRANSFERENCIA
+          artistId: 4
+          artistName: jason
+          id: 1
+          paymentDate: 12-09-2025
+          status:
+          - PENDIENTE
+          - PENDIENTE
+      properties:
+        username:
+          example: "4"
+          type: string
+        totalBalance:
+          example: 1030.0
+          type: number
+        thisMonth:
+          example: 444.4
+          type: number
+        iban:
+          example: ES9121000418450200051332
+          type: string
+        accountPropietary:
+          example: jason the wheen
+          type: string
+        balance:
+          items:
+            $ref: '#/components/schemas/BalanceDTO'
+          type: array
+        status:
+          items:
+            $ref: '#/components/schemas/PaymentDTO'
+          type: array
+      type: object
+    PaymentDTO:
+      example:
+        amount: 2
+        concept: Compra de canción
+        paymentMethod:
+        - TRANSFERENCIA
+        - TRANSFERENCIA
+        artistId: 4
+        artistName: jason
+        id: 1
+        paymentDate: 12-09-2025
+        status:
+        - PENDIENTE
+        - PENDIENTE
+      properties:
+        id:
+          example: 1
+          type: number
+        artistId:
+          example: 4
+          type: number
+        artistName:
+          example: jason
+          type: string
+        concept:
+          example: Compra de canción
+          type: string
+        paymentDate:
+          example: 12-09-2025
+          type: string
+        amount:
+          example: 2
+          type: number
+        paymentMethod:
+          items:
+            $ref: '#/components/schemas/PaymentMethod'
+          type: array
+        status:
+          items:
+            $ref: '#/components/schemas/PaymentStatus'
+          type: array
+      type: object
+    PaymentStatus:
+      enum:
+      - PENDIENTE
+      - COMPLETADO
+      - FALLADO
+      type: string
+    PaymentMethod:
+      enum:
+      - TRANSFERENCIA
+      - PAYPAL
+      - TARJETA_CREDITO
+      - EFECTIVO
+      - OTRO
+      type: string
+    BalanceDTO:
+      example:
+        balanceDate: 30-09-2025
+        monthlyBalance: 1030.0
+        artistId: 4
+        id: 30
+        status: PENDIENTE
+      properties:
+        id:
+          example: 30
+          type: number
+        artistId:
+          example: 4
+          type: number
+        monthlyBalance:
+          example: 1030.0
+          type: number
+        balanceDate:
+          example: 30-09-2025
+          type: string
+        status:
+          $ref: '#/components/schemas/BalanceStatus'
+      type: object
+    BalanceStatus:
+      enum:
+      - PENDIENTE
+      - PAGADO
+      - RECHAZADO
+      type: string
+    PageSentArtistDTO:
+      description: Representación de una página de resultados de artistas
+      example:
+        content:
+        - artisticName: TORAUMA
+          monthlyStreams: 4
+          isTrending: true
+          genres:
+          - id: 4
+            type: "J_POP, RAP, HIP_HOP"
+          - id: 4
+            type: "J_POP, RAP, HIP_HOP"
+          verified: true
+          description: Cantante inigualable que promueve el género Hip-Hop | Rap moderno
+            en Japón
+          artistId: 100
+          socialMediaLinks:
+          - id: 1
+            type: SPOTIFY
+          - id: 1
+            type: SPOTIFY
+          username: torauma@111
+        - artisticName: TORAUMA
+          monthlyStreams: 4
+          isTrending: true
+          genres:
+          - id: 4
+            type: "J_POP, RAP, HIP_HOP"
+          - id: 4
+            type: "J_POP, RAP, HIP_HOP"
+          verified: true
+          description: Cantante inigualable que promueve el género Hip-Hop | Rap moderno
+            en Japón
+          artistId: 100
+          socialMediaLinks:
+          - id: 1
+            type: SPOTIFY
+          - id: 1
+            type: SPOTIFY
+          username: torauma@111
+      properties:
+        content:
+          items:
+            $ref: '#/components/schemas/SentArtistDTO'
+          type: array
+      type: object
+    SocialMediaLinks:
+      example:
+        id: 1
+        type: SPOTIFY
+      properties:
+        id:
+          example: 1
+          type: number
+        type:
+          $ref: '#/components/schemas/SocialMediaTypes'
+      required:
+      - id
+      - type
+      type: object
+    SocialMediaTypes:
+      enum:
+      - INSTAGRAM
+      - SPOTIFY
+      - FACEBOOK
+      - GITHUB
+      - YOUTUBE
+      - SOUNDCLOUD
+      - CUENTA_UNEX
+      type: string
+    Genre:
+      example:
+        id: 4
+        type: "J_POP, RAP, HIP_HOP"
+      properties:
+        id:
+          example: 4
+          type: number
+        type:
+          $ref: '#/components/schemas/GenreType'
+      required:
+      - id
+      - type
+      type: object
+    GenreType:
+      enum:
+      - HIP_HOP
+      - RAP
+      - TRAP
+      - RNB
+      - POP
+      - ROCK
+      - ALTERNATIVE_ROCK
+      - HARD_ROCK
+      - PUNK_ROCK
+      - METAL
+      - HEAVY_METAL
+      - TRASH_METAL
+      - INDIE
+      - INDIE_ROCK
+      - INDIE_POP
+      - ELECTRONIC
+      - EDM
+      - HOUSE
+      - TECHNO
+      - TRANCE
+      - DUBSTEP
+      - DRUM_AND_BASS
+      - JAZZ
+      - BLUES
+      - FUNK
+      - SOUL
+      - CLASSICAL
+      - REGGAE
+      - REGGAETON
+      - SALSA
+      - BACHATA
+      - CUMBIA
+      - FLAMENCO
+      - FOLK
+      - COUNTRY
+      - LATIN
+      - AFROBEAT
+      - K_POP
+      - J_POP
+      - LOFI
+      - AMBIENT
+      - EXPERIMENTAL
+      - INSTRUMENTAL
+      - ACOUSTIC
+      - SOUNDTRACK
+      - GOSPEL
+      - OPERA
+      - DANCEHALL
+      - DISCO
+      - GRIME
+      - DRILL
+      - PHONK
+      - CHILLWAVE
+      - SYNTHWAVE
+      - NEW_WAVE
+      type: string
+  securitySchemes:
+    ApiKeyAuth:
+      in: header
+      name: X_API_Key
+      type: apiKey
+    BearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
+

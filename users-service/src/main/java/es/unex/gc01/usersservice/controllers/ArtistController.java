@@ -4,13 +4,10 @@ package es.unex.gc01.usersservice.controllers;
 import es.unex.gc01.usersservice.dto.*;
 import es.unex.gc01.usersservice.service.ArtistService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/artist")
@@ -60,7 +57,6 @@ public class ArtistController {
             return ResponseEntity.status(404).body(error);
         }
     }
-
 
     // Artistas en tendencia
     @GetMapping("/public/trending")

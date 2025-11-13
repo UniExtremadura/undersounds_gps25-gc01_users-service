@@ -56,11 +56,9 @@ public class UserServiceImpl implements UserService {
         user.setName(userDTO.getName());  // ← CORREGIDO
         user.setSurname(userDTO.getSurname());    // ← CORREGIDO
         user.setEmail(userDTO.getEmail());
-        user.setPhone(userDTO.getPhone());
-        user.setBio(userDTO.getBio());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        user.setUserRole(UserRole.USER);  // ← Rol por defecto
-    user.setFavoriteGenres(userDTO.getFavoriteGenres());
+        user.setRole(UserRole.USER);  // ← Rol por defecto
+
         User savedUser = userRepository.save(user);
         return mapToUserProfileDTO(savedUser);
     }
@@ -155,7 +153,7 @@ public class UserServiceImpl implements UserService {
 
         try {
             UserRole role = UserRole.valueOf(newRole.toUpperCase());
-            user.setUserRole(role);
+            user.setRole(role);
             userRepository.save(user);
             return new SuccessfulResponseDTO("Rol actualizado correctamente");
         } catch (IllegalArgumentException e) {
@@ -169,7 +167,7 @@ public class UserServiceImpl implements UserService {
         dto.setSurname(user.getSurname());
 
         dto.setEmail(user.getEmail());
-        dto.setRole(user.getUserRole().name());
+        dto.setRole(user.getRole().name());
         return dto;
     }
 
@@ -180,7 +178,7 @@ public class UserServiceImpl implements UserService {
         dto.setSurname(user.getSurname()); // ← Mapear lastName a surname
         dto.setEmail(user.getEmail());
         dto.setPersonalLink(user.getPersonalLink());
-        dto.setRol(user.getUserRole());   // ← Rol como enum
+        dto.setUserRole(user.getRole());   // ← Rol como enum
 
         if (user.getBirthday() != null) {
             dto.setBirthday(user.getBirthday().format(DateTimeFormatter.ISO_DATE));
@@ -188,12 +186,4 @@ public class UserServiceImpl implements UserService {
 
         return dto;
     }
-
-    public User getUserByUsername(String username) {
-        // Usar el metodo que carga los géneros
-        return userRepository.findByUsernameWithGenres(username)
-                .orElseThrow();
-    }
-
-
 }

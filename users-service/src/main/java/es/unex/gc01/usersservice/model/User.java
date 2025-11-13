@@ -1,20 +1,17 @@
 package es.unex.gc01.usersservice.model;
 
-import es.unex.gc01.usersservice.model.enums.GenreType;
 import es.unex.gc01.usersservice.model.enums.UserRole;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Getter
-@Setter
 @Table(name = "users")
 public class User {
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.USER;  // ← NUEVO CAMPO
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,28 +34,9 @@ public class User {
 
     private String personalLink;
     private LocalDate birthday;
-
-    // CORREGIDO: Inicializar con string vacío
-    @Column(columnDefinition = "varchar(1000) default ''")
-    private String bio = "";
-
-    // CORREGIDO: Inicializar con string vacío
-    @Column(columnDefinition = "varchar(20) default ''")
-    private String phone = "";
-
+    private String bio;
+    private String phone;
     private boolean deleted = false;
-
-    // CORREGIDO: Cambiar el nombre del campo para que coincida con el frontend
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private UserRole userRole = UserRole.USER;  // ← CAMBIADO A userRole
-
-    // CORREGIDO: Asegurar que se carguen los géneros (FetchType.EAGER)
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_genres", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "genre")
-    @Enumerated(EnumType.STRING)
-    private List<GenreType> favoriteGenres = new ArrayList<>();
 
     // Getters y Setters
     public Long getId() { return id; }
@@ -84,15 +62,7 @@ public class User {
     public boolean isDeleted() { return deleted; }
     public void setDeleted(boolean deleted) { this.deleted = deleted; }
 
-    // CORREGIDO: Cambiado a userRole
-    public UserRole getUserRole() { return userRole; }
-    public void setUserRole(UserRole userRole) { this.userRole = userRole; }
+    public UserRole getRole() { return role; }  // ← NUEVO
+    public void setRole(UserRole role) { this.role = role; }  // ← NUEVO
 
-    public List<GenreType> getFavoriteGenres() { return favoriteGenres; }
-    public void setFavoriteGenres(List<GenreType> favoriteGenres) { this.favoriteGenres = favoriteGenres; }
-
-    // Metodo helper para manejar null en favoriteGenres
-    public List<GenreType> getSafeFavoriteGenres() {
-        return favoriteGenres != null ? favoriteGenres : new ArrayList<>();
-    }
 }

@@ -1,14 +1,13 @@
 package es.unex.gc01.usersservice.dto;
 
 import es.unex.gc01.usersservice.model.enums.UserRole;
-import lombok.Getter;
-import lombok.Setter;
 
 // DTO para cambiar rol
-@Setter
-@Getter
 public class ChangeRoleDTO {
-    private UserRole role;
-
-
+    private String role;
+    public ChangeRoleDTO(String rol) {
+        this.role = rol;
+    }
+    public String getRole() {return role;}
+    public void setRole(String role) {this.role = role;}
 }
